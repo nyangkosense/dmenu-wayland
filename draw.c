@@ -22,7 +22,6 @@
 #include "xdg-output-unstable-v1-client-protocol.h"
 
 
-static const char overflow[] = "[buffer overflow]";
 static const int max_chars = 16384;
 
 struct monitor_info *monitors[16] = {0};
@@ -111,12 +110,8 @@ void get_text_size(cairo_t *cairo, const char *font, int *width, int *height,
 		int *baseline, double scale, bool markup, const char *fmt, ...) {
 	char buf[max_chars];
 
-	va_list args;
-	va_start(args, fmt);
-	if (vsnprintf(buf, sizeof(buf), fmt, args) >= max_chars) {
-		strcpy(&buf[sizeof(buf) - sizeof(overflow)], overflow);
-	}
-	va_end(args);
+	strncpy(buf, fmt, max_chars - 1);
+	buf[max_chars -1] = '\0';
 
 	PangoLayout *layout = get_pango_layout(cairo, font, buf, scale, markup);
 	pango_cairo_update_layout(cairo, layout);
@@ -129,16 +124,8 @@ void get_text_size(cairo_t *cairo, const char *font, int *width, int *height,
 
 void pango_printf(cairo_t *cairo, const char *font,
 		double scale, bool markup, const char *fmt, ...) {
-	char buf[max_chars];
 
-	va_list args;
-	va_start(args, fmt);
-	if (vsnprintf(buf, sizeof(buf), fmt, args) >= max_chars) {
-		strcpy(&buf[sizeof(buf) - sizeof(overflow)], overflow);
-	}
-	va_end(args);
-
-	PangoLayout *layout = get_pango_layout(cairo, font, buf, scale, markup);
+	PangoLayout *layout = get_pango_layout(cairo, font, fmt, scale, markup);
 	cairo_font_options_t *fo = cairo_font_options_create();
 	cairo_get_font_options(cairo, fo);
 	pango_cairo_context_set_font_options(pango_layout_get_context(layout), fo);
